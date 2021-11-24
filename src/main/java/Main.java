@@ -53,7 +53,13 @@ public class Main {
                     Package aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
                     File packDir = new File(homeDir + "/" + aPackage.getName());
                     if (packDir.exists()) {
-                        error("\"" + aPackage.getName() + "\"" + ALREADY_INSTALLED);
+                        if (argParser.getItems().contains("u") || argParser.getItems().contains("update")) {
+                            main(new String[] {"remove", aPackage.getName()}); // remove previous package
+                            main(new String[] {"install", argParser.getArgs().get(1)}); // install new one
+                        } else {
+                            error("\"" + aPackage.getName() + "\"" + ALREADY_INSTALLED);
+                            versionDifferenceLog(aPackage.getVersion(), PackageManager.getPackage(aPackage.getName()).getVersion());
+                        }
                     } else {
                         packDir.mkdirs();
                         for (String i : aPackage.getFiles()) {
@@ -83,5 +89,10 @@ public class Main {
                 }
             }
         }
+    }
+
+    private static void versionDifferenceLog(String version, String version1) {
+        System.out.println("installed version is: " + (version1 == null? "unspecified":version1) + " and you are going to install " + version);
+        System.out.println("run the same command with -u or --update to update the package");
     }
 }

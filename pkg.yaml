@@ -1,3 +1,4 @@
+#name of the package
 name: test package
 #author:
 #dependencies:
@@ -7,3 +8,10 @@ files:
   - download https://github.com/radinParsaei/VM/archive/refs/heads/master.zip
   - unzip master.zip
 version: 0 beta
+
+#The purpose of package tags is to connect packages with applications. for example If a programming language
+#compiler wants to find a library, it will look for packages that have tags related to that language
+tags:
+  - a
+  - b
+  - c

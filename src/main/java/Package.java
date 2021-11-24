@@ -6,6 +6,7 @@ public class Package {
     private String name;
     private String version;
     private ArrayList<String> files;
+    private ArrayList<String> tags;
 
     @JsonIgnoreProperties
     private String author;
@@ -51,5 +52,25 @@ public class Package {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public ArrayList<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(ArrayList<String> tags) {
+        this.tags = tags;
+    }
+
+    @Override
+    public String toString() {
+        return "Package{" +
+                "name='" + name + '\'' +
+                ", version='" + version + '\'' +
+                ", files=" + files +
+                ", tags=" + tags +
+                ", author='" + author + '\'' +
+                ", dependencies=" + dependencies +
+                '}';
     }
 }
