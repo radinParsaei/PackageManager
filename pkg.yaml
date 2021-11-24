@@ -1,0 +1,9 @@
+name: test package
+#author:
+#dependencies:
+#  - bash
+files:
+  - git https://github.com/radinParsaei/Value
+  - download https://github.com/radinParsaei/VM/archive/refs/heads/master.zip
+  - unzip master.zip
+version: 0 beta
