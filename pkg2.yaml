@@ -1,10 +1,9 @@
 #name of the package
-name: test package
+name: pkg2 # another package
 #author:
-dependencies:
-  - pkg2
+#dependencies:
+# it has no dependency
 files:
-  - git https://github.com/radinParsaei/Value
   - download https://github.com/radinParsaei/VM/archive/refs/heads/master.zip
   - unzip master.zip
 version: 0 beta

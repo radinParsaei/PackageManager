@@ -4,6 +4,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -50,7 +51,17 @@ public class Main {
                     // parse the config file (YAML)
                     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
                     mapper.findAndRegisterModules();
-                    Package aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
+                    Package aPackage = null;
+                    try {
+                        aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
+                    } catch (FileNotFoundException e) {
+                        try {
+                            argParser.getArgs().set(1, argParser.getArgs().get(1) + ".yaml");
+                            aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
+                        } catch (FileNotFoundException e1) {
+                            packageNotFound(argParser.getArgs().get(1));
+                        }
+                    }
                     File packDir = new File(homeDir + "/" + aPackage.getName());
                     if (packDir.exists()) {
                         if (argParser.getItems().contains("u") || argParser.getItems().contains("update")) {
@@ -61,6 +72,16 @@ public class Main {
                             versionDifferenceLog(aPackage.getVersion(), PackageManager.getPackage(aPackage.getName()).getVersion());
                         }
                     } else {
+                        // check dependencies
+                        if (aPackage.getDependencies() != null) {
+                            for (String dep : aPackage.getDependencies()) {
+                                try {
+                                    PackageManager.getPackage(dep);
+                                } catch (FileNotFoundException ignored) {
+                                    main(new String[]{"install", dep});
+                                }
+                            }
+                        }
                         packDir.mkdirs();
                         for (String i : aPackage.getFiles()) {
                             if (i.startsWith("git ")) {
@@ -89,6 +110,11 @@ public class Main {
                 }
             }
         }
+    }
+
+    private static void packageNotFound(String s) {
+        System.out.println("no file found for package: " + s);
+        System.exit(1);
     }
 
     private static void versionDifferenceLog(String version, String version1) {

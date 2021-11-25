@@ -47,7 +47,7 @@ public class PackageManager {
             }
             boolean add = true;
             for (String tag : tags) {
-                if (!aPackage.getTags().contains(tag)) {
+                if (!aPackage.getTags().contains(tag.toLowerCase())) {
                     add = false;
                     break;
                 }
