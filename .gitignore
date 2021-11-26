@@ -1,0 +1,9 @@
+target/
+.idea/
+.classpath
+.project
+.settings/
+install-script
+*.dylib
+*.dll
+*.so

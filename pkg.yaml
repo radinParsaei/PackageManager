@@ -5,8 +5,10 @@ dependencies:
   - pkg2
 files:
   - git https://github.com/radinParsaei/Value
+  - git file:///Users/radin/Projects/PackageManager/install-script #Change the path to the one on your computer
   - download https://github.com/radinParsaei/VM/archive/refs/heads/master.zip
   - unzip master.zip
+  - copy install-script/install,/
 version: 0 beta
 
 #The purpose of package tags is to connect packages with applications. for example If a programming language
