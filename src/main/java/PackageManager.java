@@ -2,8 +2,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 public class PackageManager {
     public static String getHomeDirectory() {
@@ -57,5 +61,28 @@ public class PackageManager {
             }
         }
         return res;
+    }
+
+    public static HashMap<String, String> getAliases() {
+        HashMap<String, String> result = new HashMap<>();
+        File file = new File(getHomeDirectory(), "aliases.list");
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(file);
+        } catch (FileNotFoundException e) {
+            return result;
+        }
+        while (true) {
+            try {
+                String line = scanner.nextLine();
+                String key = line.split("\t")[0];
+                String value = line.split("\t")[1];
+                if (key.equals("") || value.equals("")) continue;
+                result.put(key, value);
+            } catch (NoSuchElementException e) {
+                break;
+            } catch (ArrayIndexOutOfBoundsException ignored) {}
+        }
+        return result;
     }
 }

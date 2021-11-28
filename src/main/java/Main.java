@@ -5,15 +5,19 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 public class Main {
     private static final String INSTALLER_HELP_MESSAGE = "Use install <package name>";
     private static final String ALREADY_INSTALLED = " is already installed";
     private static final String REMOVE_HELP_MESSAGE = "Use remove <package name>";
+    private static final String ADD_KNOWN_PKG_HELP_MESSAGE = "Use add-known-package <describer file>";
 
     private static void printHelp() {
         System.out.println(INSTALLER_HELP_MESSAGE);
@@ -58,14 +62,38 @@ public class Main {
                     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
                     mapper.findAndRegisterModules();
                     Package aPackage = null;
-                    try {
-                        aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
-                    } catch (FileNotFoundException e) {
+                    String body = null;
+                    if (argParser.getArgs().get(1).startsWith("http://") || argParser.getArgs().get(1).startsWith("https://")) {
+                        URL url = new URL(argParser.getArgs().get(1));
+                        URLConnection con = url.openConnection();
+                        InputStream in = con.getInputStream();
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buf = new byte[8192];
+                        int len = 0;
+                        while ((len = in.read(buf)) != -1) {
+                            baos.write(buf, 0, len);
+                        }
+                        body = baos.toString("UTF-8");
+                        aPackage = mapper.readValue(body, Package.class);
+                    } else {
                         try {
-                            argParser.getArgs().set(1, argParser.getArgs().get(1) + ".yaml");
                             aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
-                        } catch (FileNotFoundException e1) {
-                            packageNotFound(argParser.getArgs().get(1));
+                        } catch (FileNotFoundException e) {
+                            try {
+                                argParser.getArgs().set(1, argParser.getArgs().get(1) + ".yaml");
+                                aPackage = mapper.readValue(new File(argParser.getArgs().get(1)), Package.class);
+                            } catch (FileNotFoundException e1) {
+                                String pathInRepo = PackageManager.getAliases().get(argParser.getArgs().get(1).substring(0, argParser.getArgs().get(1).length() - 5));
+                                if (pathInRepo != null) {
+                                    if (argParser.getItems().contains("u"))
+                                        main(new String[] {"install", pathInRepo, "-u"});
+                                    else
+                                        main(new String[] {"install", pathInRepo});
+                                    System.exit(0);
+                                } else {
+                                    packageNotFound(argParser.getArgs().get(1));
+                                }
+                            }
                         }
                     }
                     File packDir = new File(homeDir + "/" + aPackage.getName());
@@ -112,7 +140,14 @@ public class Main {
                                 copyFile(new File(packDir, i.split(",")[0].replaceFirst("copy ", "")), dest);
                             }
                         }
-                        Files.copy(new File(argParser.getArgs().get(1)).toPath(), new File(homeDir + "/" + aPackage.getName() + "/" + aPackage.getName() + ".pkgconf").toPath());
+                        if (body == null) {
+                            Files.copy(new File(argParser.getArgs().get(1)).toPath(), new File(homeDir + "/" + aPackage.getName() + "/" + aPackage.getName() + ".pkgconf").toPath());
+                        } else {
+                            byte[] data = body.getBytes();
+                            FileOutputStream out = new FileOutputStream(new File(homeDir + "/" + aPackage.getName() + "/" + aPackage.getName() + ".pkgconf").getPath());
+                            out.write(data);
+                            out.close();
+                        }
                     }
                     File installCode = new File(packDir.getPath() + "/install");
                     if (installCode.exists()) {
@@ -131,6 +166,37 @@ public class Main {
                     error(REMOVE_HELP_MESSAGE);
                 } else {
                     deleteDir(new File(homeDir + "/" + argParser.getArgs().get(1)));
+                }
+            } else if (argParser.getArgs().get(0).equals("alias")) {
+                if (argParser.getArgs().size() != 2) {
+                    error(ADD_KNOWN_PKG_HELP_MESSAGE);
+                } else {
+                    File file = new File(argParser.getArgs().get(1));
+                    File repos = new File(PackageManager.getHomeDirectory(), "aliases.list");
+                    if (!repos.exists()) repos.createNewFile();
+                    if (file.isFile()) {
+                        Scanner scanner = null;
+                        try {
+                            scanner = new Scanner(file);
+                        } catch (FileNotFoundException e) {
+                            System.err.println("file not found");
+                            System.exit(1);
+                        }
+                        FileOutputStream out = new FileOutputStream(repos, true);
+                        while (true) {
+                            try {
+                                String line = scanner.nextLine();
+                                String key = line.split("\t")[0];
+                                String value = line.split("\t")[1];
+                                if (key.equals("") || value.equals("")) continue;
+                                byte[] data = (line + "\n").getBytes();
+                                out.write(data);
+                            } catch (NoSuchElementException e) {
+                                break;
+                            } catch (ArrayIndexOutOfBoundsException ignored) {}
+                        }
+                        out.close();
+                    }
                 }
             }
         }
