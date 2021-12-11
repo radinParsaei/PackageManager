@@ -1,11 +1,24 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 
 public class InstallerFunctions {
+    private static String packageName = "";
+
+    public static String getPackageName() {
+        return packageName;
+    }
+
+    public static void setPackageName(String packageName) {
+        InstallerFunctions.packageName = packageName;
+    }
+
     public static class Shell extends CustomValue {
         private final ValueBase value;
         public Shell(ValueBase value) {
@@ -48,6 +61,32 @@ public class InstallerFunctions {
             }
             return new SyntaxTree.List(new SyntaxTree.Text(output.toString()), new SyntaxTree.Text(error.toString()),
                     new SyntaxTree.Number(proc.exitValue()), new SyntaxTree.Number(new BigDecimal(proc.pid())));
+        }
+
+        @Override
+        ArrayList<Object> addNamespaceOn() {
+            return new ArrayList<>(Collections.singleton(value));
+        }
+    }
+
+    public static class AddExecutable extends CustomProgram {
+        private final ValueBase value;
+        public AddExecutable(ValueBase value) {
+            this.value = value;
+        }
+
+        @Override
+        void eval() {
+            try {
+                File executablesDir = new File(PackageManager.getHomeDirectory(), "bin");
+                if (!executablesDir.isDirectory()) {
+                    executablesDir.mkdir();
+                }
+                String fileName = value.toString();
+                Files.createSymbolicLink(new File(executablesDir.getPath(), fileName.split("/")[fileName.split("/").length - 1]).toPath(), new File(PackageManager.getPackageDirectory(packageName), value.toString()).toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override

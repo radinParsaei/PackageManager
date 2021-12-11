@@ -40,11 +40,39 @@ public class Main {
         file.delete();
     }
 
-
-    private static void copyFile(File source, File dest) throws IOException {
-        try (FileChannel sourceChannel = new FileInputStream(source).getChannel(); FileChannel destChannel = new FileOutputStream(dest).getChannel()) {
-            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+    private static void copyDirectory(File sourceDir, File destDir) throws IOException {
+        if (!sourceDir.isDirectory()) {
+            copyFile(sourceDir, destDir);
+            return;
         }
+        if (!destDir.exists()) {
+            destDir.mkdir();
+        }
+        for (String f : sourceDir.list()) {
+            File source = new File(sourceDir, f);
+            File destination = new File(destDir, f);
+            if (source.isDirectory()) {
+                copyDirectory(source, destination);
+            } else {
+                copyFile(source, destination);
+            }
+        }
+    }
+
+    private static void copyFile(File sourceFile, File destinationFile) throws IOException {
+        if (sourceFile.isDirectory()) {
+            copyDirectory(sourceFile, destinationFile);
+            return;
+        }
+        FileInputStream input = new FileInputStream(sourceFile);
+        FileOutputStream output = new FileOutputStream(destinationFile);
+        byte[] buf = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = input.read(buf)) > 0) {
+            output.write(buf, 0, bytesRead);
+        }
+        input.close();
+        output.close();
     }
 
     public static void main(String[] args) throws IOException, GitAPIException {
@@ -118,6 +146,7 @@ public class Main {
                             }
                         }
                         packDir.mkdirs();
+                        InstallerFunctions.setPackageName(aPackage.getName());
                         for (String i : aPackage.getFiles()) {
                             if (i.startsWith("git ")) {
                                 Git.cloneRepository()
@@ -138,6 +167,8 @@ public class Main {
                                     dest = new File(dest, i.split(",")[0].replaceFirst("copy ", "").split("/")[i.split(",")[0].split("/").length - 1]);
                                 }
                                 copyFile(new File(packDir, i.split(",")[0].replaceFirst("copy ", "")), dest);
+                            } else if (i.startsWith("addexec ")) {
+                                new InstallerFunctions.AddExecutable(new SyntaxTree.Text(i.replace("addexec", "").trim())).eval();
                             }
                         }
                         if (body == null) {
@@ -157,6 +188,7 @@ public class Main {
                         SyntaxTree.getClassesWithInit().clear();
                         SyntaxTree.getClassesParameters().clear();
                         new SyntaxTree.Function("sh", new SyntaxTree.Return(new InstallerFunctions.Shell(new SyntaxTree.Variable("a"))), "a").eval();
+                        new SyntaxTree.Function("addexec", new InstallerFunctions.AddExecutable(new SyntaxTree.Variable("a")), "a").eval();
                         new SyntaxTree.SetVariable("OSName", new SyntaxTree.Text(System.getProperty("os.name"))).eval();
                         CompilerMain.compile(new Compiler(installCode.getPath(), false, null, null, null, null));
                     }
