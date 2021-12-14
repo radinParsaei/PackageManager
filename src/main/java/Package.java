@@ -64,13 +64,11 @@ public class Package {
 
     @Override
     public String toString() {
-        return "Package{" +
-                "name='" + name + '\'' +
-                ", version='" + version + '\'' +
-                ", files=" + files +
-                ", tags=" + tags +
-                ", author='" + author + '\'' +
-                ", dependencies=" + dependencies +
-                '}';
+        return "Package '" + name + "':" +
+                "\n\tversion='" + version + '\'' +
+//                "\n\tfiles=" + files +
+                "\n\ttags=" + tags.toString().substring(1, tags.toString().length() - 1) +
+                "\n\tauthor='" + (author != null? author:"unknown") + '\'' +
+                "\n\tdependencies=" + (dependencies != null? dependencies.toString().substring(1, dependencies.toString().length() - 1):"nothing");
     }
 }

@@ -17,7 +17,8 @@ public class Main {
     private static final String INSTALLER_HELP_MESSAGE = "Use install <package name>";
     private static final String ALREADY_INSTALLED = " is already installed";
     private static final String REMOVE_HELP_MESSAGE = "Use remove <package name>";
-    private static final String ADD_KNOWN_PKG_HELP_MESSAGE = "Use add-known-package <describer file>";
+    private static final String ADD_KNOWN_PKG_HELP_MESSAGE = "Use alias <describer file>";
+    private static final String INFO_HELP_MESSAGE = "Use info <package name>";
 
     private static void printHelp() {
         System.out.println(INSTALLER_HELP_MESSAGE);
@@ -229,6 +230,12 @@ public class Main {
                         }
                         out.close();
                     }
+                }
+            } else if (argParser.getArgs().get(0).equals("info")) {
+                if (argParser.getArgs().size() != 2) {
+                    error(INFO_HELP_MESSAGE);
+                } else {
+                    System.out.println(PackageManager.getPackage(argParser.getArgs().get(1)));
                 }
             }
         }
